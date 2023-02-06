@@ -159,13 +159,19 @@ abstract contract DssVest is ERC2771Context {
         z = x > y ? y : x;
     }
     function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x + y) >= x, "DssVest/add-overflow");
+        unchecked {
+            require((z = x + y) >= x, "DssVest/add-overflow");
+        }
     }
     function sub(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x - y) <= x, "DssVest/sub-underflow");
+        unchecked {
+            require((z = x - y) <= x, "DssVest/sub-underflow");
+        }
     }
     function mul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require(y == 0 || (z = x * y) / y == x, "DssVest/mul-overflow");
+        unchecked {
+            require(y == 0 || (z = x * y) / y == x, "DssVest/mul-overflow");
+        }
     }
     function toUint48(uint256 x) internal pure returns (uint48 z) {
         require((z = uint48(x)) == x, "DssVest/uint48-overflow");
