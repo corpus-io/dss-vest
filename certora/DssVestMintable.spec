@@ -26,7 +26,8 @@ methods {
     token.stopped() returns (bool) envfree
     token.totalSupply() returns (uint256) envfree
     token.balanceOf(address) returns (uint256) envfree
-}
+    _msgSender() returns (address) envfree
+} 
 
 definition max_uint48() returns uint256 = 2^48 - 1;
 
@@ -123,7 +124,7 @@ rule rely(address usr) {
 rule rely_revert(address usr) {
     env e;
 
-    uint256 ward = wards(e.msg.sender);
+    uint256 ward = wards(_msgSender());
 
     rely@withrevert(e, usr);
 
@@ -149,7 +150,7 @@ rule deny(address usr) {
 rule deny_revert(address usr) {
     env e;
 
-    uint256 ward = wards(e.msg.sender);
+    uint256 ward = wards(_msgSender());
 
     deny@withrevert(e, usr);
 
@@ -233,7 +234,7 @@ rule file(bytes32 what, uint256 data) {
 rule file_revert(bytes32 what, uint256 data) {
     env e;
 
-    uint256 ward = wards(e.msg.sender);
+    uint256 ward = wards(_msgSender());
     uint256 locked = lockedGhost();
 
     file@withrevert(e, what, data);
@@ -272,7 +273,7 @@ rule create(address _usr, uint256 _tot, uint256 _bgn, uint256 _tau, uint256 _eta
     assert(tot == _tot, "create did not set tot as expected");
     assert(rxd == 0, "create did not set rxd as expected");
     assert(mgr == _mgr, "create did not set mgr as expected");
-    assert(res == 0, "create did not set res as expected");
+    assert(res == 1, "create did not set res as expected");
     assert(fin > bgn, "create did not set fin and bgn as expected");
 }
 
@@ -280,7 +281,7 @@ rule create(address _usr, uint256 _tot, uint256 _bgn, uint256 _tau, uint256 _eta
 rule create_revert(address _usr, uint256 _tot, uint256 _bgn, uint256 _tau, uint256 _eta, address _mgr) {
     env e;
 
-    uint256 ward = wards(e.msg.sender);
+    uint256 ward = wards(_msgSender());
     uint256 twenty_years = TWENTY_YEARS();
     uint256 _cap = cap();
     uint256 _ids = ids();
@@ -433,7 +434,7 @@ rule vest_revert(uint256 _id) {
     bool revert1  = e.msg.value > 0;
     bool revert2  = locked != 0;
     bool revert3  = usr == 0;
-    bool revert4  = res != 0 && usr != e.msg.sender;
+    bool revert4  = res != 0 && usr != _msgSender();
     bool revert5  = e.block.timestamp >= clf && e.block.timestamp >= bgn && e.block.timestamp < fin && tot * (e.block.timestamp - bgn) > max_uint256;
     bool revert6  = e.block.timestamp >= clf && e.block.timestamp >= bgn && e.block.timestamp < fin && fin == bgn;
     bool revert7  = e.block.timestamp >= clf && accruedAmt < rxd;
@@ -561,7 +562,7 @@ rule vest_amt_revert(uint256 _id, uint256 _maxAmt) {
     bool revert1  = e.msg.value > 0;
     bool revert2  = locked != 0;
     bool revert3  = usr == 0;
-    bool revert4  = res != 0 && usr != e.msg.sender;
+    bool revert4  = res != 0 && usr != _msgSender();
     bool revert5  = e.block.timestamp >= clf && e.block.timestamp >= bgn && e.block.timestamp < fin && tot * (e.block.timestamp - bgn) > max_uint256;
     bool revert6  = e.block.timestamp >= clf && e.block.timestamp >= bgn && e.block.timestamp < fin && fin == bgn;
     bool revert7  = e.block.timestamp >= clf && accruedAmt < rxd;
@@ -715,7 +716,7 @@ rule restrict_revert(uint256 _id) {
     env e;
 
     uint256 locked = lockedGhost();
-    uint256 ward = wards(e.msg.sender);
+    uint256 ward = wards(_msgSender());
     address _usr = usr(_id);
 
     restrict@withrevert(e, _id);
@@ -723,7 +724,7 @@ rule restrict_revert(uint256 _id) {
     bool revert1 = e.msg.value > 0;
     bool revert2 = locked != 0;
     bool revert3 = _usr == 0;
-    bool revert4 = ward != 1 && _usr != e.msg.sender;
+    bool revert4 = ward != 1 && _usr != _msgSender();
 
     assert(revert1 => lastReverted, "Sending ETH did not revert");
     assert(revert2 => lastReverted, "Locked did not revert");
@@ -747,7 +748,7 @@ rule unrestrict_revert(uint256 _id) {
     env e;
 
     uint256 locked = lockedGhost();
-    uint256 ward = wards(e.msg.sender);
+    uint256 ward = wards(_msgSender());
     address _usr = usr(_id);
 
     unrestrict@withrevert(e, _id);
@@ -755,7 +756,7 @@ rule unrestrict_revert(uint256 _id) {
     bool revert1 = e.msg.value > 0;
     bool revert2 = locked != 0;
     bool revert3 = _usr == 0;
-    bool revert4 = ward != 1 && _usr != e.msg.sender;
+    bool revert4 = ward != 1 && _usr != _msgSender();
 
     assert(revert1 => lastReverted, "Sending ETH did not revert");
     assert(revert2 => lastReverted, "Locked did not revert");
@@ -814,7 +815,7 @@ rule yank_revert(uint256 _id) {
     env e;
 
     uint256 locked = lockedGhost();
-    uint256 ward = wards(e.msg.sender);
+    uint256 ward = wards(_msgSender());
     address usr; uint48 bgn; uint48 clf; uint48 fin; address mgr; uint8 res; uint128 tot; uint128 rxd;
     usr, bgn, clf, fin, mgr, res, tot, rxd = awards(_id);
 
@@ -836,7 +837,7 @@ rule yank_revert(uint256 _id) {
 
     bool revert1 = e.msg.value > 0;
     bool revert2 = locked != 0;
-    bool revert3 = ward != 1 && mgr != e.msg.sender;
+    bool revert3 = ward != 1 && mgr != _msgSender();
     bool revert4 = usr == 0;
     bool revert5 = e.block.timestamp < fin && e.block.timestamp > max_uint48();
     bool revert6 = e.block.timestamp < fin && e.block.timestamp >= bgn && e.block.timestamp >= clf && tot * (e.block.timestamp - bgn) > max_uint256;
@@ -910,7 +911,7 @@ rule yank_end_revert(uint256 _id, uint256 _end) {
     env e;
 
     uint256 locked = lockedGhost();
-    uint256 ward = wards(e.msg.sender);
+    uint256 ward = wards(_msgSender());
     address usr; uint48 bgn; uint48 clf; uint48 fin; address mgr; uint8 res; uint128 tot; uint128 rxd;
     usr, bgn, clf, fin, mgr, res, tot, rxd = awards(_id);
 
@@ -933,7 +934,7 @@ rule yank_end_revert(uint256 _id, uint256 _end) {
 
     bool revert1 = e.msg.value > 0;
     bool revert2 = locked != 0;
-    bool revert3 = ward != 1 && mgr != e.msg.sender;
+    bool revert3 = ward != 1 && mgr != _msgSender();
     bool revert4 = usr == 0;
     bool revert5 = _end2 < fin && _end2 > max_uint48();
     bool revert6 = _end2 < fin && _end2 >= bgn && _end2 >= clf && tot * (_end2 - bgn) > max_uint256;
@@ -977,7 +978,7 @@ rule move_revert(uint256 _id, address _dst) {
 
     bool revert1 = e.msg.value > 0;
     bool revert2 = locked != 0;
-    bool revert3 = _usr != e.msg.sender;
+    bool revert3 = _usr != _msgSender();
     bool revert4 = _dst == 0;
 
     assert(revert1 => lastReverted, "Sending ETH did not revert");
