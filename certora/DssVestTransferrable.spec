@@ -270,7 +270,7 @@ rule create(address _usr, uint256 _tot, uint256 _bgn, uint256 _tau, uint256 _eta
     assert(tot == _tot, "create did not set tot as expected");
     assert(rxd == 0, "create did not set rxd as expected");
     assert(mgr == _mgr, "create did not set mgr as expected");
-    assert(res == 0, "create did not set res as expected");
+    assert(res == 1, "create did not set res as expected");
     assert(fin > bgn, "create did not set fin and bgn as expected");
 }
 
