@@ -82,19 +82,15 @@ contract DssVestFactoryDemo is Test {
             "COMPT"
         );
         vm.stopPrank();
-
-        // deploy factory
-        DssVestNaiveFactory factory = new DssVestNaiveFactory();
-
         // Deploy instance
-        mVest = DssVestMintable(factory.createDssVestMintable(address(forwarder), address(companyToken), companyAdminAddress));
+        mVest = DssVestMintable(DssVestNaiveFactory.createDssVestMintable(address(forwarder), address(companyToken), companyAdminAddress));
 
         require(mVest.isTrustedForwarder(address(forwarder)), "Forwarder not trusted");
         require(address(mVest.gem()) == address(companyToken), "Token not set");
         require(mVest.wards(companyAdminAddress) == 1, "Company admin is not a ward");
         require(mVest.wards(address(this)) == 0, "Msg.sender is a ward");
         
-        console.log("factory address: ", address(factory));
+        console.log("DssVestNaiveFactory address: ", address(DssVestNaiveFactory));
         console.log("clone address: ", address(mVest));
 
         // initialize vesting contract 
@@ -110,12 +106,10 @@ contract DssVestFactoryDemo is Test {
     function testNoWrongWardslocal() public {
 
         vm.startPrank(platformAdminAddress);
-        // Deploy instance
-        DssVestNaiveFactory factory = new DssVestNaiveFactory();
-        mVest = DssVestMintable(factory.createDssVestMintable(address(forwarder), address(companyToken), companyAdminAddress));
+        mVest = DssVestMintable(DssVestNaiveFactory.createDssVestMintable(address(forwarder), address(companyToken), companyAdminAddress));
         vm.stopPrank();
 
-        console.log("factory address: ", address(factory));
+        console.log("DssVestNaiveFactory address: ", address(DssVestNaiveFactory));
         console.log("companyAdminAddress: ", companyAdminAddress);
         console.log("test account address: ", address(this));
         console.log("platformAdminAddress: ", platformAdminAddress);
@@ -123,7 +117,7 @@ contract DssVestFactoryDemo is Test {
         require(mVest.isTrustedForwarder(address(forwarder)), "Forwarder not trusted");
         require(address(mVest.gem()) == address(companyToken), "Token not set");
         require(mVest.wards(companyAdminAddress) == 1, "Company admin is not a ward");
-        require(mVest.wards(address(factory)) == 0, "Factory is a ward");
+        require(mVest.wards(address(DssVestNaiveFactory)) == 0, "Factory is a ward");
         require(mVest.wards(platformAdminAddress) == 0, "Platform is a ward");
         require(mVest.wards(address(this)) == 0, "Test account is a ward");
         
