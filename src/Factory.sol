@@ -6,7 +6,7 @@ import {DssVestMintable} from "./DssVest.sol";
 
 contract DssVestNaiveFactory {
 
-    event DssVestMintableCreated(address dssVestMintable, address companyAdminAddress);
+    event DssVestMintableCreated(address dssVestMintable, address companyToken, address companyAdminAddress);
 
     /**
     @dev Creates a new DssVestMintable contract and transfers the ownership to the companyAdminAddress
@@ -18,7 +18,7 @@ contract DssVestNaiveFactory {
         DssVestMintable myContract = new DssVestMintable(forwarder, companyToken);
         myContract.rely(companyAdminAddress);
         myContract.deny(address(this));
-        emit DssVestMintableCreated(address(myContract), companyAdminAddress);
+        emit DssVestMintableCreated(address(myContract), companyToken, companyAdminAddress);
         return address(myContract);
     }
 }

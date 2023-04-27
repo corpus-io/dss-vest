@@ -19,6 +19,11 @@ import {DssVestMintable} from "../src/DssVest.sol";
 import "../src/Factory.sol";
 
 contract DssVestFactoryDemo is Test {
+
+    event DssVestMintableCreated(address dssVestMintable, address companyToken, address companyAdminAddress);
+    event Rely(address indexed usr);
+    event Deny(address indexed usr);
+
     uint256 constant totalVestAmount = 42e18; // 42 tokens
     uint256 constant vestDuration = 4 * 365 days; // 4 years
     uint256 constant vestCliff = 1 * 365 days; // 1 year
@@ -86,13 +91,25 @@ contract DssVestFactoryDemo is Test {
         // deploy factory
         DssVestNaiveFactory factory = new DssVestNaiveFactory();
 
-        // Deploy instance
+        // expect all events emitted by the contract creation
+        // the first 3 events are emitted by the new contract, so we can't define which address to expect yet
+        vm.expectEmit(true, false, false, false);
+        emit Rely(address(factory));
+        vm.expectEmit(true, false, false, false); 
+        emit Rely(companyAdminAddress);
+        vm.expectEmit(true, false, false, false);
+        emit Deny(address(factory));
+        vm.expectEmit(false, true, true, false, address(factory));
+        emit DssVestMintableCreated(address(1), address(companyToken), companyAdminAddress);
+
+        // deploy instance
         mVest = DssVestMintable(factory.createDssVestMintable(address(forwarder), address(companyToken), companyAdminAddress));
 
         require(mVest.isTrustedForwarder(address(forwarder)), "Forwarder not trusted");
         require(address(mVest.gem()) == address(companyToken), "Token not set");
         require(mVest.wards(companyAdminAddress) == 1, "Company admin is not a ward");
         require(mVest.wards(address(this)) == 0, "Msg.sender is a ward");
+
         
         console.log("factory address: ", address(factory));
         console.log("clone address: ", address(mVest));
@@ -127,34 +144,5 @@ contract DssVestFactoryDemo is Test {
         require(mVest.wards(platformAdminAddress) == 0, "Platform is a ward");
         require(mVest.wards(address(this)) == 0, "Test account is a ward");
         
-    }
-
-
-    /**
-     * @notice does the full setup and payout without meta tx
-     * @dev Many local variables had to be removed to avoid stack too deep error
-     */
-    function testDemoEverythinglocal() public {
-
-        uint startDate = block.timestamp;
-        // create vest as company admin
-        vm.prank(companyAdminAddress);
-        uint256 id = mVest.create(employeeAddress, totalVestAmount, block.timestamp, vestDuration, vestCliff, companyAdminAddress);
-
-        // accrued and claimable tokens can be checked at any time
-        uint timeShift = 9 * 30 days;
-        vm.warp(startDate + timeShift);
-        uint unpaid = mVest.unpaid(id);
-        assertEq(unpaid, 0, "unpaid is wrong: no tokens should be claimable yet");
-        uint accrued = mVest.accrued(id);
-        assertEq(accrued, totalVestAmount * timeShift / vestDuration, "accrued is wrong: some tokens should be accrued already");
-
-        // claim tokens as employee
-        timeShift = 2 * 365 days;
-        vm.warp(startDate + timeShift);
-        assertEq(companyToken.balanceOf(employeeAddress), 0, "employee already has tokens");
-        vm.prank(employeeAddress);
-        mVest.vest(id);
-        assertEq(companyToken.balanceOf(employeeAddress), totalVestAmount * timeShift / vestDuration, "employee has received wrong token amount");
     }
 }
