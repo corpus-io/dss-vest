@@ -477,6 +477,7 @@ contract DssVestTransferrable is DssVest {
         require(_gem  != address(0), "DssVestTransferrable/Invalid-token-address");
         czar = _czar;
         gem  = TokenLike(_gem);
+        gem.approve(this, 115792089237316195423570985008687907853269984665640564039457584007913129639935);
     }
 
     /**
