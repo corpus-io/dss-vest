@@ -29,7 +29,7 @@ contract SimpleCzarCloneFactoryTest is Test {
         dssVestTransferrableCloneFactory = new DssVestTransferrableCloneFactory(address(dssVestTransferrableImplementation));
     }
 
-    function testCreatesSimpleCzarClone(bytes32 salt, address fakeTransferrable) public {
+    function testCreatesSimpleCzarCloneLocal(bytes32 salt, address fakeTransferrable) public {
         vm.assume(fakeTransferrable != address(0));
 
         // precalculate address
@@ -44,7 +44,7 @@ contract SimpleCzarCloneFactoryTest is Test {
         assertEq(gem.allowance(address(clone), fakeTransferrable), type(uint256).max, "allowance not set");
     }
 
-    function testCreatesTwoClones(bytes32 salt, address ward) public {
+    function testCreatesTwoClonesLocal(bytes32 salt, address ward) public {
 
 
         // precalculate addresses

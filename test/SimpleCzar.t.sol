@@ -13,13 +13,13 @@ contract SimpleCzarTest is Test {
         gem = new ERC20MintableByAnyone("Gem", "GEM");
     }
 
-    function testSetsUpAllowance(address fakeDssVestTransferrable) public {
+    function testSetsUpAllowanceLocal(address fakeDssVestTransferrable) public {
         vm.assume(fakeDssVestTransferrable != address(0));
         SimpleCzar czar = new SimpleCzar(gem, address(fakeDssVestTransferrable));
         assertEq(gem.allowance(address(czar), address(fakeDssVestTransferrable)), type(uint256).max, "allowance not set");
     }
 
-    function testDoesReleaseTokens(address fakeDssVestTransferrable, address receiver, uint256 amount, address thirdParty) public {
+    function testDoesReleaseTokensLocal(address fakeDssVestTransferrable, address receiver, uint256 amount, address thirdParty) public {
         vm.assume(receiver != address(0));
         vm.assume(fakeDssVestTransferrable != address(0));
         vm.assume(thirdParty != address(0));
@@ -42,8 +42,6 @@ contract SimpleCzarTest is Test {
         vm.prank(fakeDssVestTransferrable);
         gem.transferFrom(address(czar), receiver, amount);
 
-        assertEq(gem.balanceOf(receiver), amount, "receiver does not have right amount of tokens"); 
-
-                  
+        assertEq(gem.balanceOf(receiver), amount, "receiver does not have right amount of tokens");            
     }
 }
