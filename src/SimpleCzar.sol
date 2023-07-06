@@ -20,10 +20,8 @@
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-abstract contract ERC20 {
-    function approve(address, uint256) external virtual returns (bool);
-}
 
 /**
  * @title SimpleCzar
@@ -36,6 +34,6 @@ contract SimpleCzar is Initializable {
     }
 
     function initialize(ERC20 _token, address _DssVestTransferrable) public initializer {
-        _token.approve(_DssVestTransferrable, type(uint256).max);
+        require(_token.approve(_DssVestTransferrable, type(uint256).max));
     }
 }
