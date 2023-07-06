@@ -16,23 +16,34 @@ contract ERC20MintableByAnyone is ERC20 {
     }
 }
 
-contract SimpleTransferrable {
-    function transfer(address gem, address from, address to, uint256 amount) public virtual returns (bool) {}
-}
-
 
 contract SimpleCzarTest is Test {
     ERC20MintableByAnyone gem;
-    SimpleTransferrable transferrable;
     
     function setUp() public {
         gem = new ERC20MintableByAnyone("Gem", "GEM");
-        transferrable = new SimpleTransferrable();
     }
 
-    function testSetsUpAllowance(address localTransferrable) public {
-        vm.assume(localTransferrable != address(0));
-        SimpleCzar czar = new SimpleCzar(gem, address(transferrable));
-        assertEq(gem.allowance(address(czar), address(transferrable)), type(uint256).max, "allowance not set");
+    function testSetsUpAllowance(address fakeDssVestTransferrable) public {
+        vm.assume(fakeDssVestTransferrable != address(0));
+        SimpleCzar czar = new SimpleCzar(gem, address(fakeDssVestTransferrable));
+        assertEq(gem.allowance(address(czar), address(fakeDssVestTransferrable)), type(uint256).max, "allowance not set");
+    }
+
+    function testDoesReleaseTokens(address fakeDssVestTransferrable, address receiver, uint256 amount) public {
+        vm.assume(receiver != address(0));
+        vm.assume(fakeDssVestTransferrable != address(0));
+        vm.assume(amount > 0);
+        SimpleCzar czar = new SimpleCzar(gem, address(fakeDssVestTransferrable));
+        // supply the czar with tokens
+        gem.mint(address(czar), amount);
+
+        assertEq(gem.balanceOf(receiver), 0, "receiver already has tokens");
+
+        // release tokens
+        vm.prank(fakeDssVestTransferrable);
+        gem.transferFrom(address(czar), receiver, amount);
+
+        assertEq(gem.balanceOf(receiver), amount, "receiver does not have right amount of tokens");            
     }
 }
