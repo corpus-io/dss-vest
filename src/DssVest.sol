@@ -124,11 +124,8 @@ abstract contract DssVest is ERC2771Context, Initializable {
     /**
         @dev Base vesting logic contract constructor
         @param _trustedForwarder The trusted forwarder contract to be used for meta-transactions (see EIP-2771)
-        @param _cap The maximum per-second issuance token rate
     */
-    constructor (address _trustedForwarder, uint256 _cap) ERC2771Context(_trustedForwarder) initializer {
-        initialize(_msgSender(), _cap);   
-    }
+    constructor (address _trustedForwarder) ERC2771Context(_trustedForwarder) initializer {}
 
     /**
         @notice Initialize the contract
@@ -519,11 +516,9 @@ contract DssVestMintable is DssVest {
     /**
         @dev This contract must be authorized to 'mint' on the token
         @param _forwarder The address of the trusted forwarder for ERC2771
-        @param _gem The contract address of the mintable token
-        @param _cap The maximum amount of token bits that can be released in one plan each second
     */
-    constructor(address _forwarder, address _gem, uint256 _cap) DssVest(_forwarder, _cap) {
-        initialize(_gem, _msgSender(), _cap);   
+    constructor(address _forwarder) DssVest(_forwarder) {
+   
     }
 
     function initialize(address _gem, address _ward, uint256 _cap) initializer public {
@@ -553,11 +548,8 @@ contract DssVestSuckable is DssVest {
     /**
         @dev This contract must be authorized to 'suck' on the vat
         @param _forwarder The address of the trusted forwarder for ERC2771
-        @param _chainlog The contract address of the MCD chainlog
-        @param _cap The maximum amount of token bits that can be released in one plan each second
     */
-    constructor(address _forwarder, address _chainlog, uint256 _cap) DssVest(_forwarder, _cap) {
-        initialize(_chainlog, _msgSender(), _cap);
+    constructor(address _forwarder) DssVest(_forwarder) {
     }
 
     function initialize(address _chainlog, address _ward, uint256 _cap) initializer public {
@@ -595,12 +587,8 @@ contract DssVestTransferrable is DssVest {
     /**
         @dev This contract must be approved for transfer of the gem on the czar
         @param _forwarder The address of the trusted forwarder for ERC2771
-        @param _czar The owner of the tokens to be distributed
-        @param _gem  The token to be distributed
-        @param _cap The maximum amount of token bits that can be released in one plan each second
     */
-    constructor(address _forwarder, address _czar, address _gem, uint256 _cap) DssVest(_forwarder, _cap) {
-        initialize(_czar, _gem, _msgSender(), _cap);    
+    constructor(address _forwarder) DssVest(_forwarder) {
     }
 
     function initialize(address _czar, address _gem, address _ward, uint256 _cap) initializer public {
