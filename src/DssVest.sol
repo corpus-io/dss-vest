@@ -139,7 +139,7 @@ abstract contract DssVest is ERC2771Context, Initializable {
         @param _ward The address to be granted admin rights to the contract
         @param _cap The maximum per-second issuance token rate
      */
-    function initialize(address _ward, uint256 _cap) public onlyInitializing { 
+    function initialize(address _ward, uint256 _cap) internal onlyInitializing { 
         wards[_ward] = 1;
         emit Rely(_ward);
         cap = _cap;
