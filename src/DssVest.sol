@@ -268,6 +268,22 @@ abstract contract DssVest is ERC2771Context, Initializable {
         return _create(_usr, _tot, _bgn, _tau, _eta, _mgr);
     }
 
+    /**
+        @dev Governance adds a vesting contract that can be vested by anyone
+        @param _usr The recipient of the reward
+        @param _tot The total amount of the vest
+        @param _bgn The starting timestamp of the vest
+        @param _tau The duration of the vest (in seconds)
+        @param _eta The cliff duration in seconds (i.e. 1 years)
+        @param _mgr An optional manager for the contract. Can yank if vesting ends prematurely.
+        @return id  The id of the vesting contract
+    */
+    function createUnrestricted(address _usr, uint256 _tot, uint256 _bgn, uint256 _tau, uint256 _eta, address _mgr) external lock auth returns (uint256 id) {
+        uint256 _id = _create(_usr, _tot, _bgn, _tau, _eta, _mgr);
+        awards[_id].res = 0;
+        return id;
+    }
+
 
     /**
         @dev Governance adds a vesting contract
