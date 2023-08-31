@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import {DssVestMintable} from "../src/DssVest.sol";
+import "./resources/ERC20MintableByAnyone.sol";
 
 contract DssVestLocal is Test {
     // init forwarder
@@ -46,5 +47,48 @@ contract DssVestLocal is Test {
         vm.expectRevert("DssVest/not-authorized");
         vm.prank(noWard);
         vest.create(address(2), 1, 1, 1, 1, address(0));
+    }
+
+    function testCreateUnrestricted(address _usr) public {
+        vm.assume(_usr != address(0));
+
+        uint256 days_vest = 10**18;
+        ERC20MintableByAnyone gem = new ERC20MintableByAnyone("gem", "GEM");
+
+        DssVestMintable mVest = new DssVestMintable(address(forwarder), address(gem), 10**18);
+
+        uint256 id = mVest.createUnrestricted(_usr, 100 * days_vest, block.timestamp, 100 days, 0 days, address(0));
+
+        assertEq(mVest.res(id), 0, "Award is restricted");
+
+        vm.warp(block.timestamp + 10 days);
+
+        (address usr, uint48 bgn, uint48 clf, uint48 fin, address mgr,, uint128 tot, uint128 rxd) = mVest.awards(id);
+        assertEq(usr, _usr);
+        assertEq(uint256(bgn), block.timestamp - 10 days);
+        assertEq(uint256(fin), block.timestamp + 90 days);
+        assertEq(uint256(tot), 100 * days_vest);
+        assertEq(uint256(rxd), 0);
+        assertEq(gem.balanceOf(_usr), 0);
+
+        mVest.vest(id);
+        (usr, bgn, clf, fin, mgr,, tot, rxd) = mVest.awards(id);
+        assertEq(usr, _usr);
+        assertEq(uint256(bgn), block.timestamp - 10 days);
+        assertEq(uint256(fin), block.timestamp + 90 days);
+        assertEq(uint256(tot), 100 * days_vest);
+        assertEq(uint256(rxd), 10 * days_vest);
+        assertEq(gem.balanceOf(_usr), 10 * days_vest);
+
+        vm.warp(block.timestamp + 70 days);
+
+        mVest.vest(id, type(uint256).max);
+        (usr, bgn, clf, fin, mgr,, tot, rxd) = mVest.awards(id);
+        assertEq(usr, _usr);
+        assertEq(uint256(bgn), block.timestamp - 80 days);
+        assertEq(uint256(fin), block.timestamp + 20 days);
+        assertEq(uint256(tot), 100 * days_vest);
+        assertEq(uint256(rxd), 80 * days_vest);
+        assertEq(gem.balanceOf(_usr), 80 * days_vest);
     }
 }

@@ -281,7 +281,7 @@ abstract contract DssVest is ERC2771Context, Initializable {
     function createUnrestricted(address _usr, uint256 _tot, uint256 _bgn, uint256 _tau, uint256 _eta, address _mgr) external lock auth returns (uint256 id) {
         uint256 _id = _create(_usr, _tot, _bgn, _tau, _eta, _mgr);
         awards[_id].res = 0;
-        return id;
+        return _id;
     }
 
 

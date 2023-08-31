@@ -564,6 +564,42 @@ contract DssVestTest is DSTest {
         assertEq(gem.balanceOf(address(this)), 80 * days_vest);
     }
 
+    function testUnRestrictedVestCreation() public {
+        ThirdPartyVest alice = new ThirdPartyVest();
+        uint256 id = mVest.createUnrestricted(address(this), 100 * days_vest, block.timestamp, 100 days, 0 days, address(0));
+        
+        hevm.warp(block.timestamp + 10 days);
+
+        (address usr, uint48 bgn, uint48 clf, uint48 fin, address mgr,, uint128 tot, uint128 rxd) = mVest.awards(id);
+        assertEq(usr, address(this));
+        assertEq(uint256(bgn), block.timestamp - 10 days);
+        assertEq(uint256(fin), block.timestamp + 90 days);
+        assertEq(uint256(tot), 100 * days_vest);
+        assertEq(uint256(rxd), 0);
+        assertEq(gem.balanceOf(address(this)), 0);
+
+        alice.vest(address(mVest), id);
+
+        (usr, bgn, clf, fin, mgr,, tot, rxd) = mVest.awards(id);
+        assertEq(usr, address(this));
+        assertEq(uint256(bgn), block.timestamp - 10 days);
+        assertEq(uint256(fin), block.timestamp + 90 days);
+        assertEq(uint256(tot), 100 * days_vest);
+        assertEq(uint256(rxd), 10 * days_vest);
+        assertEq(gem.balanceOf(address(this)), 10 * days_vest);
+
+        hevm.warp(block.timestamp + 70 days);
+
+        alice.vest(address(mVest), id);
+        (usr, bgn, clf, fin, mgr,, tot, rxd) = mVest.awards(id);
+        assertEq(usr, address(this));
+        assertEq(uint256(bgn), block.timestamp - 80 days);
+        assertEq(uint256(fin), block.timestamp + 20 days);
+        assertEq(uint256(tot), 100 * days_vest);
+        assertEq(uint256(rxd), 80 * days_vest);
+        assertEq(gem.balanceOf(address(this)), 80 * days_vest);
+    }
+
     function testFailRestrictedVest() public {
         ThirdPartyVest alice = new ThirdPartyVest();
         uint256 id = mVest.create(address(this), 100 * days_vest, block.timestamp, 100 days, 0 days, address(0));
