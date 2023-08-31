@@ -309,7 +309,7 @@ contract DssVestLocal is Test {
         assertTrue(gem.balanceOf(usr) == _tot, "balance is not equal to total");
     }
 
-    function testRevokeAndYankBehaveEqual( uint48 _tau, uint48 _eta, uint128 _tot,  uint48 revokeAfter) public {
+    function testRevokeAndYankBehaveEqualLocal( uint48 _tau, uint48 _eta, uint128 _tot,  uint48 revokeAfter) public {
         // uint128 _tot = 8127847e18;
         uint48 _bgn = 60 * 365 days;
         bytes32 _slt = 0;
@@ -356,14 +356,14 @@ contract DssVestLocal is Test {
             console.log("User gets no tokens, so claim must fail");
             vm.prank(usrCommit);
             vm.expectRevert(); // "DssVest/no-vest-total-amount" or "DssVest/commitment-revoked-before-cliff"
-            vest.claimAndVest(hash, usrCommit, _tot, _bgn, _tau, _eta, ward, _slt);
+            vest.claimAndVest(hash, usrCommit, _tot, _bgn, _tau, _eta, ward, _slt, type(uint256).max);
             // assure no vesting plan has been created
             assertTrue(vest.ids() == planId, "a vesting plan has been created");
         }
         else {
             console.log("User gets tokens");
             vm.prank(usrCommit);
-            vest.claimAndVest(hash, usrCommit, _tot, _bgn, _tau, _eta, ward, _slt);
+            vest.claimAndVest(hash, usrCommit, _tot, _bgn, _tau, _eta, ward, _slt, type(uint256).max);
 
             console.log("usrCommit balance: ", gem.balanceOf(usrCommit));
             // check correct execution
