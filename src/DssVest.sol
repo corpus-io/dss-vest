@@ -224,7 +224,7 @@ abstract contract DssVest is ERC2771Context, Initializable {
     }
 
     /**
-        @dev Create a vesting contract from an earlier commitment
+        @dev Create a vesting contract from an earlier commitment. This function respects revocations and updates the vesting plan accordingly.
         @param _bch The hash of the award's contents
         @param _usr The recipient of the reward
         @param _tot The total amount of the vest
