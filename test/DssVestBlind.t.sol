@@ -29,6 +29,8 @@ contract DssVestLocal is Test {
     DssVestMintable vest;
     address ward = address(1);
     address usr = address(2);
+    address usrCommit = address(5);
+    address usrCreate = address(6);
 
 
     function setUp() public {
@@ -305,6 +307,73 @@ contract DssVestLocal is Test {
         assertTrue(vest.accrued(1) == _tot, "accrued is not original total amount");
         assertTrue(vest.unpaid(1) == 0, "unpaid is not 0");
         assertTrue(gem.balanceOf(usr) == _tot, "balance is not equal to total");
+    }
+
+    function testRevokeAndYankBehaveEqual( uint48 _tau, uint48 _eta, uint128 _tot,  uint48 revokeAfter) public {
+        // uint128 _tot = 8127847e18;
+        uint48 _bgn = 60 * 365 days;
+        bytes32 _slt = 0;
+
+        vm.assume(revokeAfter < type(uint24).max && revokeAfter > 0);
+        vm.assume(_eta < type(uint24).max);
+        vm.assume(_tau < type(uint24).max && _tau > 0);
+        vm.assume(_tot > 0);
+        vm.assume(type(uint256).max / _tot > revokeAfter); // prevent overflow
+        vm.assume(checkBounds(usr, _tot, _bgn, _tau, _eta, DssVest(vest), block.timestamp));
+        bytes32 hash = keccak256(abi.encodePacked(usrCommit, uint256(_tot), uint256(_bgn), uint256(_tau), uint256(_eta), ward, _slt));
+
+        // commit to a vesting plan
+        assertTrue(vest.commitments(hash) == false, "commitment already exists");
+        vm.prank(ward);
+        vest.commit(hash);
+        assertTrue(vest.commitments(hash) == true, "commitment does not exist");
+
+        // create a vesting plan with the same parameters but a different receiver
+        vm.prank(ward);
+        uint256 planId = vest.create(usrCreate, _tot, _bgn, _tau, _eta, ward);
+
+        // revoke the commitment
+        vm.warp(_bgn);
+        uint256 end = _bgn + revokeAfter;
+        vm.prank(ward);
+        vm.expectEmit(true, true, true, true, address(vest));
+        emit Revoke(hash, end);
+        vest.revoke(hash, end);
+
+        // yank the vesting plan
+        vm.prank(ward);
+        vest.yank(planId, end);
+
+        // fast forward to the end of the vesting period
+        vm.warp(uint256(_bgn) + uint256(_tau) + 1);
+
+        vm.prank(usrCreate);
+        vest.vest(planId);
+        console.log("usrCreate balance: ", gem.balanceOf(usrCreate));
+
+        
+        if (gem.balanceOf(usrCreate) == 0) {
+            console.log("User gets no tokens, so claim must fail");
+            vm.prank(usrCommit);
+            vm.expectRevert(); // "DssVest/no-vest-total-amount" or "DssVest/commitment-revoked-before-cliff"
+            vest.claimAndVest(hash, usrCommit, _tot, _bgn, _tau, _eta, ward, _slt);
+            // assure no vesting plan has been created
+            assertTrue(vest.ids() == planId, "a vesting plan has been created");
+        }
+        else {
+            console.log("User gets tokens");
+            vm.prank(usrCommit);
+            vest.claimAndVest(hash, usrCommit, _tot, _bgn, _tau, _eta, ward, _slt);
+
+            console.log("usrCommit balance: ", gem.balanceOf(usrCommit));
+            // check correct execution
+            assertTrue(vest.commitments(hash) == false, "commitment still exists");
+            assertTrue(vest.revocations(hash) == _bgn + revokeAfter, "revocation not correct");
+            assertTrue(vest.ids() == planId + 1, "no vesting plan has been created");
+            assertTrue(vest.accrued(1) == gem.balanceOf(usrCreate), "accrued is not new total");
+            assertTrue(vest.unpaid(1) == 0, "unpaid is not 0");
+            assertTrue(gem.balanceOf(usrCommit) == gem.balanceOf(usrCreate), "balance is not equal to new total");
+        }
     }
 
     function testClaimWithModifiedDataLocal(address _usr, address _usr2, uint128 _tot, uint128 _tot2, bytes32 _slt) public {
