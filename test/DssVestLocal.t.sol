@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/proxy/Proxy.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
-import {DssVestMintable} from "../src/DssVest.sol";
+import {DssVestMintable, DssVestTransferrable} from "../src/DssVest.sol";
 import "./resources/ERC20MintableByAnyone.sol";
 
 contract DssVestLocal is Test {
@@ -49,8 +49,9 @@ contract DssVestLocal is Test {
         vest.create(address(2), 1, 1, 1, 1, address(0));
     }
 
-    function testCreateUnrestricted(address _usr) public {
+    function testCreateUnrestrictedMintableLocal(address _usr, address rando) public {
         vm.assume(_usr != address(0));
+        vm.assume(rando != address(0));
 
         uint256 days_vest = 10**18;
         ERC20MintableByAnyone gem = new ERC20MintableByAnyone("gem", "GEM");
@@ -71,6 +72,8 @@ contract DssVestLocal is Test {
         assertEq(uint256(rxd), 0);
         assertEq(gem.balanceOf(_usr), 0);
 
+        // anyone can vest this unrestricted award
+        vm.prank(rando);
         mVest.vest(id);
         (usr, bgn, clf, fin, mgr,, tot, rxd) = mVest.awards(id);
         assertEq(usr, _usr);
@@ -82,6 +85,7 @@ contract DssVestLocal is Test {
 
         vm.warp(block.timestamp + 70 days);
 
+        vm.prank(rando);
         mVest.vest(id, type(uint256).max);
         (usr, bgn, clf, fin, mgr,, tot, rxd) = mVest.awards(id);
         assertEq(usr, _usr);
