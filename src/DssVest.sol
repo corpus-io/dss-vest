@@ -127,7 +127,7 @@ abstract contract DssVest is ERC2771Context, Initializable {
         @param _cap The maximum per-second issuance token rate
     */
     constructor (address _trustedForwarder, uint256 _cap) ERC2771Context(_trustedForwarder) initializer {
-        initialize(_msgSender(), _cap);   
+        initialize(_msgSender(), _cap); 
     }
 
     /**
@@ -141,7 +141,7 @@ abstract contract DssVest is ERC2771Context, Initializable {
         @param _ward The address to be granted admin rights to the contract
         @param _cap The maximum per-second issuance token rate
      */
-    function initialize(address _ward, uint256 _cap) public onlyInitializing { 
+    function initialize(address _ward, uint256 _cap) internal onlyInitializing { 
         wards[_ward] = 1;
         emit Rely(_ward);
         cap = _cap;
@@ -224,7 +224,7 @@ abstract contract DssVest is ERC2771Context, Initializable {
     }
 
     /**
-        @dev Create a vesting contract from an earlier commitment
+        @dev Create a vesting contract from an earlier commitment. This function respects revocations and updates the vesting plan accordingly.
         @param _bch The hash of the award's contents
         @param _usr The recipient of the reward
         @param _tot The total amount of the vest
@@ -539,7 +539,8 @@ contract DssVestMintable is DssVest {
         @param _cap The maximum amount of token bits that can be released in one plan each second
     */
     constructor(address _forwarder, address _gem, uint256 _cap) DssVest(_forwarder, _cap) {
-        initialize(_gem, _msgSender(), _cap);   
+        initialize(_gem, _msgSender(), _cap); 
+        _disableInitializers();  
     }
 
     function initialize(address _gem, address _ward, uint256 _cap) initializer public {
@@ -574,6 +575,7 @@ contract DssVestSuckable is DssVest {
     */
     constructor(address _forwarder, address _chainlog, uint256 _cap) DssVest(_forwarder, _cap) {
         initialize(_chainlog, _msgSender(), _cap);
+        _disableInitializers();
     }
 
     function initialize(address _chainlog, address _ward, uint256 _cap) initializer public {
@@ -616,7 +618,8 @@ contract DssVestTransferrable is DssVest {
         @param _cap The maximum amount of token bits that can be released in one plan each second
     */
     constructor(address _forwarder, address _czar, address _gem, uint256 _cap) DssVest(_forwarder, _cap) {
-        initialize(_czar, _gem, _msgSender(), _cap);    
+        initialize(_czar, _gem, _msgSender(), _cap);
+        _disableInitializers();    
     }
 
     function initialize(address _czar, address _gem, address _ward, uint256 _cap) initializer public {
