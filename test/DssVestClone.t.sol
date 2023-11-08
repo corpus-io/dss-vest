@@ -67,6 +67,8 @@ contract DssVestCloneDemo is Test {
     bytes32 r;
     bytes32 s;
 
+    uint256 days_vest = 10**18;
+
     function setUp() public {
 
         vm.warp(60 * 365 days); // in local testing, the time would start at 1. This causes problems with the vesting contract. So we warp to 60 years.
@@ -435,6 +437,8 @@ contract DssVestCloneDemo is Test {
         vm.assume(localCompanyAdmin != address(forwarder));
         vm.assume(localCompanyAdmin != address(0x0));
         vm.assume(localCompanyAdmin != platformAdminAddress);
+        vm.assume(localCompanyAdmin != platformAdminAddress);
+        vm.assume(localCompanyAdmin != address(mintableFactory));
 
         vm.startPrank(platformAdminAddress);
         Token localCompanyToken = new Token(
@@ -510,5 +514,58 @@ contract DssVestCloneDemo is Test {
         assertEq(localCompanyToken.balanceOf(employeeAddress), totalVestAmount * timeShift / vestDuration, "employee has received wrong token amount");
     }
     
+    function testCreateUnrestrictedTransferrableLocal(address _usr, address rando, bytes32 salt) public {
+        vm.assume(_usr != address(0));
+        vm.assume(rando != address(0));
+
+        ERC20MintableByAnyone gem = new ERC20MintableByAnyone("gem", "GEM");
+
+        // predict clone address
+        address expectedAddress = transferrableFactory.predictCloneAddress(salt);
+
+        // Deploy clone
+        DssVestTransferrable tVest = DssVestTransferrable(
+            transferrableFactory.createTransferrableVestingClone(salt, expectedAddress, address(gem), address(this), 10**18));
+
+        // mint necessary tokens
+        gem.mint(address(tVest), 100 * days_vest);
+
+        uint256 id = tVest.createUnrestricted(_usr, 100 * days_vest, block.timestamp, 100 days, 0 days, address(0));
+
+        assertEq(tVest.res(id), 0, "Award is restricted");
+
+        vm.warp(block.timestamp + 10 days);
+
+        (address usr, uint48 bgn, uint48 clf, uint48 fin,,, uint128 tot, uint128 rxd) = tVest.awards(id);
+        assertEq(usr, _usr);
+        assertEq(uint256(bgn), block.timestamp - 10 days);
+        assertEq(uint256(fin), block.timestamp + 90 days);
+        assertEq(uint256(tot), 100 * days_vest);
+        assertEq(uint256(rxd), 0);
+        assertEq(gem.balanceOf(_usr), 0);
+
+        // anyone can vest this unrestricted award
+        vm.prank(rando);
+        tVest.vest(id);
+        (usr, bgn, clf, fin,,, tot, rxd) = tVest.awards(id);
+        assertEq(usr, _usr);
+        assertEq(uint256(bgn), block.timestamp - 10 days);
+        assertEq(uint256(fin), block.timestamp + 90 days);
+        assertEq(uint256(tot), 100 * days_vest);
+        assertEq(uint256(rxd), 10 * days_vest);
+        assertEq(gem.balanceOf(_usr), 10 * days_vest);
+
+        vm.warp(block.timestamp + 70 days);
+
+        vm.prank(rando);
+        tVest.vest(id, type(uint256).max);
+        (usr, bgn, clf, fin,,, tot, rxd) = tVest.awards(id);
+        assertEq(usr, _usr);
+        assertEq(uint256(bgn), block.timestamp - 80 days);
+        assertEq(uint256(fin), block.timestamp + 20 days);
+        assertEq(uint256(tot), 100 * days_vest);
+        assertEq(uint256(rxd), 80 * days_vest);
+        assertEq(gem.balanceOf(_usr), 80 * days_vest);
+    }
     
 }
