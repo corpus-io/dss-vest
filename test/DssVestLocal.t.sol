@@ -132,7 +132,7 @@ contract DssVestLocal is Test {
         assertEq(usr, _usr, "new user is not the same");
         assertEq(uint256(bgn), pauseEnd - 3, "new start is wrong"); // because 3 days of cliff had already passed 
         assertEq(uint256(clf), pauseEnd + 7, "new cliff is wrong"); // because 7 days of cliff remain
-        assertEq(uint256(total), total, "new total is wrong");
+        assertEq(uint256(tot), total, "new total is wrong");
         assertEq(uint256(fin), pauseEnd + 97, "new end is wrong"); // because pause started after 3 days
 
 
@@ -144,4 +144,51 @@ contract DssVestLocal is Test {
 
         assertEq(gem.balanceOf(_usr), total, "balance is wrong");
     }
+
+function testPauseAfterCliffLocal(address _usr, uint256 pauseAfter, uint256 pauseDuration) public {
+        vm.assume(_usr != address(0));
+        vm.assume(pauseAfter >=10);
+        vm.assume(pauseAfter < 100);
+        vm.assume(pauseDuration > 0);
+        vm.assume(pauseDuration < 10 * 365 days);
+
+        ERC20MintableByAnyone gem = new ERC20MintableByAnyone("gem", "GEM");
+
+        DssVestMintable mVest = new DssVestMintable(address(forwarder), address(gem), 10**18);
+
+        mVest.create(_usr, total, startOfTime, duration, eta, address(0)); // first id is 1
+
+        vm.warp(startOfTime + 3);
+
+        mVest.pause(1, startOfTime + pauseAfter, startOfTime + pauseAfter + pauseDuration); // new id is 2
+
+        // make sure old id is yanked by setting tot to 0 because it is inside cliff still
+        (address usr, uint48 bgn, uint48 clf, uint48 fin,,, uint128 tot,) = mVest.awards(1);
+        assertEq(usr, _usr, "user is not the same");
+        assertEq(uint256(bgn), startOfTime, "start is wrong");
+        assertEq(uint256(fin), startOfTime + pauseAfter, "finish is wrong");
+        assertTrue(uint256(tot) < total, "total is too much");
+        assertTrue(uint256(tot) != 0, "total is 0");
+
+        
+
+        // make sure new id has proper values
+        uint128 newTot;
+        (usr, bgn, clf, fin,,, newTot,) = mVest.awards(2);
+        assertEq(usr, _usr, "new user is not the same");
+        assertEq(uint256(bgn), startOfTime + pauseAfter + pauseDuration, "new start is wrong"); // because 3 days of cliff had already passed 
+        assertEq(uint256(clf), bgn, "new cliff is wrong"); // because 7 days of cliff remain
+        assertEq(uint256(newTot), total - tot, "new total is wrong");
+        assertEq(uint256(fin), startOfTime + pauseDuration + duration, "new end is wrong"); // because pause started after 3 days
+
+
+        // go to end of vestings and claim all. It must match the total
+        vm.warp(startOfTime + pauseAfter + pauseDuration + 1000 days);
+        vm.startPrank(_usr);
+        mVest.vest(2, type(uint256).max);
+        mVest.vest(1, type(uint256).max);
+
+        assertEq(gem.balanceOf(_usr), total, "balance is wrong");
+    }
+
 }
