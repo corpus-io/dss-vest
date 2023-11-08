@@ -515,7 +515,7 @@ abstract contract DssVest is ERC2771Context, Initializable {
         @dev pause vesting. Yanks a vesting contract with `_id` at `_pauseStart` and 
         creates a new one with the remaining tokens starting at `_pauseEnd`
      */
-    function pause(uint256 _id, uint256 _pauseStart, uint256 _pauseEnd) external lock returns (uint256 id) {
+    function pause(uint256 _id, uint256 _pauseStart, uint256 _pauseEnd) external returns (uint256 id) {
         require(wards[_msgSender()] == 1 || awards[_id].mgr == _msgSender(), "DssVest/not-authorized");
         Award memory _award = awards[_id];
         require(_award.usr != address(0), "DssVest/invalid-award");
@@ -529,26 +529,34 @@ abstract contract DssVest is ERC2771Context, Initializable {
         // new total as old total minus tokens accrued before pause start date
         uint256 newTot;
         uint256 newStart;
-        if (_pauseStart < _award.eta) {
+        uint256 newDuration;
+        uint256 newEta;
+        if (_pauseStart < _award.clf) {
             // pause start is before cliff
             // new total is old total because no tokens have been accrued yet
             newTot = _award.tot;
+            // new vest is as long as old vest
+            newDuration = _award.fin - _award.bgn;
             // new start is pause end minus the part of the cliff that had already been reached
-            newStart = _pauseEnd - (_award.eta - _award.bgn); 
+            // -> when the pause ends, the same part of the cliff has already passed
+            newStart = _pauseEnd - (_pauseStart - _award.bgn); 
+            newEta = _award.clf - _award.bgn;
         } else {
             // pause start is after cliff
             // new total is old total minus tokens accrued before pause start date
             newTot = _award.tot - accrued(_pauseStart, _award.bgn, _award.fin, _award.tot);
+            // new vest is as long as remaining part of old vest
+            newDuration = _award.fin - _pauseStart;
             // new start is pause end
             newStart = _pauseEnd;
+            newEta = 0;
         }
 
         // yank old vesting contract
         _yank(_id, _pauseStart);
 
-
         // create new vesting contract
-        id = _create(_award.usr, newTot, newStart, _award.fin - _pauseStart, 0, _award.mgr);
+        id = _create(_award.usr, newTot, newStart, newDuration, newEta, _award.mgr);
     }
 
     /**
