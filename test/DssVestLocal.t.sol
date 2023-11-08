@@ -147,10 +147,8 @@ contract DssVestLocal is Test {
 
 function testPauseAfterCliffLocal(address _usr, uint256 pauseAfter, uint256 pauseDuration) public {
         vm.assume(_usr != address(0));
-        vm.assume(pauseAfter >=10);
-        vm.assume(pauseAfter < 100);
-        vm.assume(pauseDuration > 0);
-        vm.assume(pauseDuration < 10 * 365 days);
+        pauseAfter = pauseAfter % 90 + 10; // range from 10 to 99
+        pauseDuration = pauseDuration % (10 * 365 days) + 1;
 
         ERC20MintableByAnyone gem = new ERC20MintableByAnyone("gem", "GEM");
 
