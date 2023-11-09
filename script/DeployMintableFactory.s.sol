@@ -14,6 +14,7 @@ contract DeployMintableCloneFactory is Script {
 
         console.log("Deploying from: ", deployerAddress );
 
+        // address forwarder = vm.envAddress("FORWARDER_MAINNET");
         address forwarder = vm.envAddress("FORWARDER_GOERLI");
         address gem = address(0xdeadbeef);
         uint256 cap = 42 * 10 ** 18;
@@ -21,6 +22,10 @@ contract DeployMintableCloneFactory is Script {
         vm.startBroadcast(deployerPrivateKey);
         DssVestMintable mintable = new DssVestMintable(forwarder, gem, cap);
         console.log("DssVestMintable logic contract deployed at: ", address(mintable));
+
+        console.log("Removing ward from logic contract. Deployer is ward: ", mintable.wards(deployerAddress));
+        mintable.deny(deployerAddress);
+        console.log("Logic contract still has ward: ", mintable.wards(deployerAddress));
         
         DssVestMintableCloneFactory factory = new DssVestMintableCloneFactory(address(mintable));
         console.log("DssVestMintableCloneFactory deployed at: ", address(factory));
