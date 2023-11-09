@@ -206,6 +206,8 @@ pip3 install slither-analyzer --user
 
 ## Foundry
 
+### Testing
+
 Some foundry tests have been added extending the contracts to be ERC2771 compliant. Other unit tests can also be run with foundry. To do so, follow these steps:
 
 1. Get a rpc URL that can be used for mainnet forks, e.g. from infura
@@ -219,6 +221,20 @@ Some foundry tests have been added extending the contracts to be ERC2771 complia
    ```
    Either replace `"$ETH_RPC_URL"` with the URL from step 1, or make sure the environment variable contains this URL.
 
+### Deploying
+
+To deploy the contracts to a network:
+ 
+```bash
+forge create --rpc-url $GOERLI_RPC_URL --private-key $PRIVATE_KEY --verify --etherscan-api-key=$ETHERSCAN_API_KEY src/DssVest.sol:DssVestMintable --constructor-args $FORWARDER $GEM $CAP 
+```
+
+Or use prepared scripts like this:
+
+```bash
+forge script script/DeployMintableFactory.s.sol --rpc-url $GOERLI_RPC_URL  --verify --broadcast
+```
+
 ## NPM
 
 Follow these steps to publish a new version of the package to NPM:
@@ -229,5 +245,5 @@ Follow these steps to publish a new version of the package to NPM:
    ```
 - publish (add `--dry-run` to test)
   ```
-  ETH_RPC_URL=$ETH_RPC npm publish [--tag <alpha/beta>] --dry-run
+  ETH_RPC_URL=$ETH_RPC_URL npm publish [--tag <alpha/beta>] --dry-run
   ```
